@@ -4,5 +4,5 @@ index
 
 .. toctree::
 
-   memo/memo.rst
+   shap.rst
    aboutme.rst
