@@ -86,6 +86,7 @@
 <div class="line-block">
 <div class="line">SHAPはSHapley Additive exPlanationの略で、機械学習分野で使われる説明可能なAI(XAI)のアルゴリズムです。</div>
 <div class="line">Shapley(シャープレイ)は人物名、Additiveは「添付の、追加の」の意味です。(-itiveは「-の性質の」を意味する接尾辞)</div>
+<div class="line">SHAPはシャープレイの考案したシャープレイ値の理論を機械学習に応用したものです。</div>
 <div class="line">SHAPを使うことで個々の推論結果に対してどの特徴量の影響が大きいかを説明できます。</div>
 </div>
 </section>
@@ -93,7 +94,6 @@
 <h2>シャープレイとは<a class="headerlink" href="#id2" title="この見出しへのパーマリンク"></a></h2>
 <div class="line-block">
 <div class="line">Shapley values(シャープレイ値)を1953年のゲーム理論関係の論文で考案した人物です。</div>
-<div class="line">SHAPはシャープレイ値の理論を機械学習に応用したものです。</div>
 </div>
 </section>
 <section id="id3">
@@ -149,20 +149,35 @@
 </pre></div>
 </div>
 <p>何かしらのモデルを作成します。</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shap</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">shap</span>
+<span class="kn">import</span> <span class="nn">xgboost</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="o">...</span>
-<span class="n">model</span> <span class="o">=</span> <span class="o">...</span>
-<span class="o">...</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">()</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">feature_names</span><span class="p">)</span>
+
+<span class="n">x_train</span> <span class="o">=</span> <span class="n">df</span>
+<span class="n">y_train</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">target</span>
+
+<span class="n">x_tr</span><span class="p">,</span> <span class="n">x_va</span><span class="p">,</span> <span class="n">y_tr</span><span class="p">,</span> <span class="n">y_va</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span>
+                                            <span class="n">y_train</span><span class="p">,</span>
+                                            <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                                            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                            <span class="n">stratify</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+                                            <span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">xgboost</span><span class="o">.</span><span class="n">XGBRegressor</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_tr</span><span class="p">,</span> <span class="n">y_tr</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="line-block">
-<div class="line">SHAPに基づいて予測値を計算します。(xは予測したい入力データ)</div>
-<div class="line">Explainerはモデル非依存なの(Explainer、KernelExplainer等)とモデル依存(TreeExplainer、DeepExplaier等)なのがあり、使い分ける必要があります。</div>
-<div class="line">モデル非依存なのは、その代わりに計算時間が他より長くなるようです。</div>
+<div class="line">shapのAPIを使い予測値を計算します。</div>
+<div class="line">Explainerはモデル非依存なの(Explainer、KernelExplainer等)とモデル依存(TreeExplainer、DeepExplaier等)なのがあります。</div>
+<div class="line">モデル非依存なのは、その代わりに計算時間がモデル依存のより長くなるようです。</div>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">explainer</span> <span class="o">=</span> <span class="n">shap</span><span class="o">.</span><span class="n">Explainer</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">shap_values</span> <span class="o">=</span> <span class="n">explainer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">shap_values</span> <span class="o">=</span> <span class="n">explainer</span><span class="p">(</span><span class="n">x_va</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="line-block">
@@ -172,6 +187,9 @@
 <span class="n">shap</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">waterfall</span><span class="p">(</span><span class="n">shap_values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
 </div>
+<figure class="align-default">
+<img alt="_images/shap-01.png" src="_images/shap-01.png" />
+</figure>
 <div class="line-block">
 <div class="line">また個々の推論結果だけでなく、modelのfeature_importanceのように入力データ全体に対してどの特徴量が重要かを確認できます。</div>
 </div>
@@ -179,12 +197,16 @@
 <span class="n">shap</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">shap_values</span><span class="p">)</span>
 </pre></div>
 </div>
+<figure class="align-default">
+<img alt="_images/shap-02.png" src="_images/shap-02.png" />
+</figure>
 </section>
 <section id="id5">
 <h2>制約<a class="headerlink" href="#id5" title="この見出しへのパーマリンク"></a></h2>
 <ul class="simple">
 <li><p>特徴量が多いデータには不向き：シャープレイ値の計算量は2のn乗のオーダーなので特徴量が多いほど計算に時間がかかる(SHAPは工夫して計算量を減らしているらしい)</p></li>
 <li><p>ヒューマンフレンドリーでない：非技術者にとっては必ずしも分かりやすくない</p></li>
+<li><p>APIが使い辛い：shapのグラフ表示関係のAPIはmodelによってエラー(shap_valuesのデータ型関係)となる場合があった(lgbmで確認)</p></li>
 </ul>
 </section>
 </section>

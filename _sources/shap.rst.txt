@@ -7,13 +7,13 @@ SHAPとは
 
 | SHAPはSHapley Additive exPlanationの略で、機械学習分野で使われる説明可能なAI(XAI)のアルゴリズムです。
 | Shapley(シャープレイ)は人物名、Additiveは「添付の、追加の」の意味です。(-itiveは「-の性質の」を意味する接尾辞)
+| SHAPはシャープレイの考案したシャープレイ値の理論を機械学習に応用したものです。
 | SHAPを使うことで個々の推論結果に対してどの特徴量の影響が大きいかを説明できます。
 
 シャープレイとは
 ==================
 
 | Shapley values(シャープレイ値)を1953年のゲーム理論関係の論文で考案した人物です。
-| SHAPはシャープレイ値の理論を機械学習に応用したものです。
 
 シャープレイ値とは
 ==================
@@ -63,20 +63,35 @@ shapのパッケージをインストールし、
 
 .. code-block:: python
 
+   import pandas as pd
    import shap
+   import xgboost
+   from sklearn.model_selection import train_test_split
+   from sklearn.datasets import load_breast_cancer
    
-   ...
-   model = ...
-   ...
+   data = load_breast_cancer()
+   df = pd.DataFrame(data.data, columns=data.feature_names)
+   
+   x_train = df
+   y_train = data.target
+   
+   x_tr, x_va, y_tr, y_va = train_test_split(x_train,
+                                               y_train,
+                                               test_size=0.2,
+                                               shuffle=True,
+                                               stratify=y_train,
+                                               random_state=123)
+   
+   model = xgboost.XGBRegressor().fit(x_tr, y_tr)
 
-| SHAPに基づいて予測値を計算します。(xは予測したい入力データ)
-| Explainerはモデル非依存なの(Explainer、KernelExplainer等)とモデル依存(TreeExplainer、DeepExplaier等)なのがあり、使い分ける必要があります。
-| モデル非依存なのは、その代わりに計算時間が他より長くなるようです。
+| shapのAPIを使い予測値を計算します。
+| Explainerはモデル非依存なの(Explainer、KernelExplainer等)とモデル依存(TreeExplainer、DeepExplaier等)なのがあります。
+| モデル非依存なのは、その代わりに計算時間がモデル依存のより長くなるようです。
 
 .. code-block:: python
 
    explainer = shap.Explainer(model)
-   shap_values = explainer(x)
+   shap_values = explainer(x_va)
 
 | 後はshapでグラフ化のAPIが用意されているので、それらを使えば個々の推論結果に対してどの特徴量が重要かを確認できます。
 
@@ -85,6 +100,8 @@ shapのパッケージをインストールし、
    # 1件目をウォーターフォールな図で表示
    shap.plots.waterfall(shap_values[0])
 
+.. figure:: /images/shap/shap-01.png
+
 | また個々の推論結果だけでなく、modelのfeature_importanceのように入力データ全体に対してどの特徴量が重要かを確認できます。
 
 .. code-block:: python
@@ -92,11 +109,14 @@ shapのパッケージをインストールし、
    # 全体での表示
    shap.plots.bar(shap_values)
 
+.. figure:: /images/shap/shap-02.png
+
 制約
 ========
 
 * 特徴量が多いデータには不向き：シャープレイ値の計算量は2のn乗のオーダーなので特徴量が多いほど計算に時間がかかる(SHAPは工夫して計算量を減らしているらしい)
 * ヒューマンフレンドリーでない：非技術者にとっては必ずしも分かりやすくない
+* APIが使い辛い：shapのグラフ表示関係のAPIはmodelによってエラー(shap_valuesのデータ型関係)となる場合があった(lgbmで確認)
 
 
 
